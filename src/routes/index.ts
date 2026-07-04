@@ -7,6 +7,9 @@ import socialRoutes from './social';
 import squadRoutes from './squads';
 import channelRoutes from './channels';
 import discoverRoutes from './discover';
+import aiCoachRoutes from './aiCoach';
+import coachRoutes from './coaches';
+import subscriptionRoutes from './subscriptions';
 
 const router = Router();
 
@@ -46,5 +49,14 @@ router.use('/channels', channelRoutes);
 // Discover & Search routes (GET /discover, GET /search)
 router.use('/discover', discoverRoutes);
 router.use('/search', discoverRoutes);
+
+// AI Coach routes (POST /ai-coach/messages, GET /ai-coach/history)
+router.use('/ai-coach', aiCoachRoutes);
+
+// Coach Marketplace routes (GET /coaches, POST /coaches/:id/book)
+router.use('/coaches', coachRoutes);
+
+// Subscription routes (POST /subscriptions/upgrade)
+router.use('/subscriptions', subscriptionRoutes);
 
 export default router;
