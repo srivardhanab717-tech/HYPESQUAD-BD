@@ -6,6 +6,7 @@ import { createGoal, getGoalsDashboard, getGoalDetail, CreateGoalInput } from '.
 import { generateMilestonePlan } from '../services/ai/milestonePlan';
 import { performCheckin } from '../services/checkins';
 import { createAutoPost } from '../services/posts';
+import { emitCheckinCard } from '../services/messages';
 import { getSupabaseClient } from '../lib/supabase';
 import { ValidationError } from '../lib/errors';
 
@@ -153,6 +154,22 @@ router.post(
       let autoPost = null;
       if (!checkinResult.duplicate && checkinResult.current_streak !== undefined) {
         autoPost = await createAutoPost(userId, goalId, checkinResult.current_streak);
+
+        // Emit check-in card to squad channels (fire-and-forget)
+        const supabaseForGoal = getSupabaseClient();
+        const { data: goalData } = await supabaseForGoal
+          .from('goals')
+          .select('description, category')
+          .eq('id', goalId)
+          .single();
+
+        const description = (goalData as { description: string | null; category: string | null } | null)?.description
+          || (goalData as { description: string | null; category: string | null } | null)?.category
+          || 'a goal';
+
+        emitCheckinCard(userId, checkinResult.checkin_id, description).catch((err) => {
+          console.error('Failed to emit check-in card to squads:', err);
+        });
       }
 
       res.status(200).json({
