@@ -1,6 +1,7 @@
 import { getSupabaseClient } from '../lib/supabase';
 import { AppError, NotFoundError, ForbiddenError, ValidationError } from '../lib/errors';
 import { broadcastMessage } from './realtime';
+import { moderateContent } from './moderation';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -192,6 +193,13 @@ export async function sendMessage(
   }
 
   const msgData = message as MessageRow;
+
+  // Moderate text messages (async — flags but does not block)
+  if (type === 'text' && msgData.body) {
+    moderateContent('message', msgData.id, msgData.body).catch((err) => {
+      console.error('Message moderation failed:', err);
+    });
+  }
 
   // Get author profile
   const { data: profile } = await supabase

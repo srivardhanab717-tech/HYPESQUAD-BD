@@ -1,6 +1,6 @@
 import { Router, Response, NextFunction } from 'express';
-import rateLimit from 'express-rate-limit';
 import { authMiddleware } from '../middleware/auth';
+import { aiRateLimiter } from '../middleware/aiRateLimiter';
 import { AuthenticatedRequest } from '../types';
 import { ValidationError } from '../lib/errors';
 import {
@@ -14,14 +14,6 @@ import {
 import { generatePostDraft } from '../services/ai/postDraft';
 
 const router = Router();
-
-// Rate limiter for AI post draft endpoint (per user, same as milestone-plan: 10/hour)
-const draftAssistLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 hour
-  max: 10,
-  keyGenerator: (req) => (req as AuthenticatedRequest).user?.sub || 'unknown',
-  message: { error: 'Too many requests', code: 'RATE_LIMIT_EXCEEDED', statusCode: 429 },
-});
 
 // ============================================================
 // GET /feed — Paginated feed
@@ -80,7 +72,7 @@ router.post(
 router.post(
   '/draft-assist',
   authMiddleware,
-  draftAssistLimiter,
+  aiRateLimiter,
   async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       const userId = req.user!.sub;

@@ -16,6 +16,8 @@ import notificationRoutes from './notifications';
 import deviceRoutes from './devices';
 import leaderboardRoutes from './leaderboard';
 import bodyDoubleRoutes from './bodyDouble';
+import reportRoutes from './reports';
+import settingsRoutes from './settings';
 
 const router = Router();
 
@@ -82,5 +84,11 @@ router.use('/leaderboard', leaderboardRoutes);
 
 // Body Double routes (POST /realtime/body-double/:roomId/join, POST .../invite)
 router.use('/realtime/body-double', bodyDoubleRoutes);
+
+// Report routes (POST /reports)
+router.use('/reports', reportRoutes);
+
+// Settings routes (PATCH /settings)
+router.use('/settings', settingsRoutes);
 
 export default router;

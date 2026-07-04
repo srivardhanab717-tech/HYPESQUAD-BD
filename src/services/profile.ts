@@ -1,6 +1,7 @@
 import { getSupabaseClient } from '../lib/supabase';
 import { ValidationError, ConflictError, NotFoundError } from '../lib/errors';
 import { ProfileRow } from '../types';
+import { moderateContent } from './moderation';
 
 /**
  * Get the current user's profile.
@@ -167,5 +168,19 @@ export async function updateProfile(
     result = data;
   }
 
-  return result as ProfileRow;
+  const profileResult = result as ProfileRow;
+
+  // Moderate name and bio fields (async — flags but does not block)
+  if (updates.name) {
+    moderateContent('profile', userId, updates.name).catch((err) => {
+      console.error('Profile name moderation failed:', err);
+    });
+  }
+  if (updates.bio) {
+    moderateContent('profile', userId, updates.bio).catch((err) => {
+      console.error('Profile bio moderation failed:', err);
+    });
+  }
+
+  return profileResult;
 }

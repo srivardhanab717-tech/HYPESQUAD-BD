@@ -1,6 +1,6 @@
 import { Router, Response, NextFunction } from 'express';
-import rateLimit from 'express-rate-limit';
 import { authMiddleware } from '../middleware/auth';
+import { aiRateLimiter } from '../middleware/aiRateLimiter';
 import { AuthenticatedRequest } from '../types';
 import { createGoal, getGoalsDashboard, getGoalDetail, CreateGoalInput } from '../services/goals';
 import { generateMilestonePlan } from '../services/ai/milestonePlan';
@@ -11,14 +11,6 @@ import { getSupabaseClient } from '../lib/supabase';
 import { ValidationError } from '../lib/errors';
 
 const router = Router();
-
-// Rate limiter for AI milestone plan endpoint (per user)
-const milestonePlanLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 hour
-  max: 10, // 10 requests per hour per user
-  keyGenerator: (req) => (req as AuthenticatedRequest).user?.sub || 'unknown',
-  message: { error: 'Too many requests', code: 'RATE_LIMIT_EXCEEDED', statusCode: 429 },
-});
 
 /**
  * POST /goals
@@ -112,7 +104,7 @@ router.get(
 router.post(
   '/:id/milestone-plan',
   authMiddleware,
-  milestonePlanLimiter,
+  aiRateLimiter,
   async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       const userId = req.user!.sub;

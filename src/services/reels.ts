@@ -1,6 +1,7 @@
 import { getSupabaseClient } from '../lib/supabase';
 import { ValidationError, NotFoundError } from '../lib/errors';
 import { encodeCursor, decodeCursor } from '../services/feed';
+import { moderateContent } from './moderation';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -134,7 +135,16 @@ export async function createReel(
     return reelData;
   }
 
-  return updatedReel as ReelRow;
+  const finalReel = updatedReel as ReelRow;
+
+  // Moderate caption text (async — flags but does not block)
+  if (finalReel.caption) {
+    moderateContent('reel', finalReel.id, finalReel.caption).catch((err) => {
+      console.error('Reel caption moderation failed:', err);
+    });
+  }
+
+  return finalReel;
 }
 
 // ─── Reels Feed Pagination ──────────────────────────────────────────────────
