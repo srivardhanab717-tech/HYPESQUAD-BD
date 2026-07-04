@@ -1,5 +1,6 @@
 import { getSupabaseClient } from '../lib/supabase';
 import { ValidationError, NotFoundError } from '../lib/errors';
+import { createNotification } from './notifications';
 
 // ============================================================
 // Types
@@ -50,6 +51,22 @@ export async function followUser(
       { follower_id: followerId, followee_id: followeeId },
       { onConflict: 'follower_id,followee_id', ignoreDuplicates: true }
     );
+
+  // Notify the followee — fire-and-forget
+  const { data: followerProfile } = await supabase
+    .from('profiles')
+    .select('name')
+    .eq('user_id', followerId)
+    .single();
+
+  createNotification({
+    recipient_id: followeeId,
+    type: 'new_follower',
+    payload: {
+      actor_id: followerId,
+      actor_name: (followerProfile as { name: string } | null)?.name || 'Someone',
+    },
+  }).catch(() => {}); // fire-and-forget
 
   return { following: true };
 }

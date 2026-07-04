@@ -12,6 +12,10 @@ import coachRoutes from './coaches';
 import subscriptionRoutes from './subscriptions';
 import reelRoutes from './reels';
 import milestoneCardRoutes from './milestoneCards';
+import notificationRoutes from './notifications';
+import deviceRoutes from './devices';
+import leaderboardRoutes from './leaderboard';
+import bodyDoubleRoutes from './bodyDouble';
 
 const router = Router();
 
@@ -66,5 +70,17 @@ router.use('/reels', reelRoutes);
 
 // Milestone Card routes (POST /milestone-cards)
 router.use('/milestone-cards', milestoneCardRoutes);
+
+// Notification routes (GET /notifications, POST /notifications/:id/read)
+router.use('/notifications', notificationRoutes);
+
+// Device routes (POST /devices/register)
+router.use('/devices', deviceRoutes);
+
+// Leaderboard routes (GET /leaderboard?scope=&metric=)
+router.use('/leaderboard', leaderboardRoutes);
+
+// Body Double routes (POST /realtime/body-double/:roomId/join, POST .../invite)
+router.use('/realtime/body-double', bodyDoubleRoutes);
 
 export default router;
