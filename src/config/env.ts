@@ -18,6 +18,7 @@ export const config = {
     url: requireEnv('SUPABASE_URL'),
     serviceKey: requireEnv('SUPABASE_SERVICE_KEY'),
     anonKey: process.env.SUPABASE_ANON_KEY || '',
+    storageUrl: process.env.SUPABASE_STORAGE_URL || '', // Uses same SUPABASE_URL base
   },
 
   jwt: {
