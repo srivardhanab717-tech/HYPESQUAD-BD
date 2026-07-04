@@ -1,5 +1,6 @@
 import { getSupabaseClient } from '../lib/supabase';
 import { AppError, ValidationError, NotFoundError, ForbiddenError } from '../lib/errors';
+import { createNotification } from './notifications';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -368,6 +369,22 @@ export async function approveJoinRequest(
       user_id: reqData.user_id,
       role: 'member',
     });
+
+  // Notify the requester about approval — fire-and-forget
+  const { data: squadInfo } = await supabase
+    .from('squads')
+    .select('name')
+    .eq('id', squadId)
+    .single();
+
+  createNotification({
+    recipient_id: reqData.user_id,
+    type: 'squad_join',
+    payload: {
+      squad_id: squadId,
+      squad_name: (squadInfo as { name: string } | null)?.name || 'a squad',
+    },
+  }).catch(() => {}); // fire-and-forget
 
   return updatedReq;
 }

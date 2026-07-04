@@ -1,5 +1,6 @@
 import { getSupabaseClient } from '../lib/supabase';
 import { NotFoundError, ForbiddenError, ValidationError } from '../lib/errors';
+import { createNotification } from './notifications';
 
 // ============================================================
 // Types
@@ -347,6 +348,32 @@ export async function hypePost(postId: string, userId: string): Promise<HypeResu
     .select('*', { count: 'exact', head: true })
     .eq('post_id', postId);
 
+  // Notify the post author (unless self-hype) — fire-and-forget
+  const { data: postRow } = await supabase
+    .from('posts')
+    .select('author_id')
+    .eq('id', postId)
+    .single();
+
+  if (postRow && (postRow as { author_id: string }).author_id !== userId) {
+    // Fetch hype actor's name
+    const { data: actorProfile } = await supabase
+      .from('profiles')
+      .select('name')
+      .eq('user_id', userId)
+      .single();
+
+    createNotification({
+      recipient_id: (postRow as { author_id: string }).author_id,
+      type: 'hype',
+      payload: {
+        actor_id: userId,
+        actor_name: (actorProfile as { name: string } | null)?.name || 'Someone',
+        post_id: postId,
+      },
+    }).catch(() => {}); // fire-and-forget
+  }
+
   return {
     hype_count: count || 0,
     viewer_has_hyped: true,
@@ -463,6 +490,26 @@ export async function createComment(
     .single();
 
   const profileData = profile as { user_id: string; name: string; handle: string | null; avatar_color: string | null } | null;
+
+  // Notify the post author (unless self-comment) — fire-and-forget
+  const { data: postForNotif } = await supabase
+    .from('posts')
+    .select('author_id')
+    .eq('id', postId)
+    .single();
+
+  if (postForNotif && (postForNotif as { author_id: string }).author_id !== userId) {
+    createNotification({
+      recipient_id: (postForNotif as { author_id: string }).author_id,
+      type: 'comment',
+      payload: {
+        actor_id: userId,
+        actor_name: profileData?.name || 'Someone',
+        post_id: postId,
+        comment_id: commentData.id,
+      },
+    }).catch(() => {}); // fire-and-forget
+  }
 
   return {
     id: commentData.id,
