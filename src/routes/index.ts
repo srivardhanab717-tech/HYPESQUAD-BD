@@ -4,6 +4,9 @@ import profileRoutes from './profile';
 import goalRoutes from './goals';
 import feedRoutes from './feed';
 import socialRoutes from './social';
+import squadRoutes from './squads';
+import channelRoutes from './channels';
+import discoverRoutes from './discover';
 
 const router = Router();
 
@@ -33,5 +36,15 @@ router.use('/posts', feedRoutes);
 
 // Social routes (POST/DELETE /users/:id/follow, GET /users/:id/followers, GET /users/:id/following)
 router.use('/users', socialRoutes);
+
+// Squad routes (POST /squads, GET /squads/mine, GET /squads/suggested, join flow)
+router.use('/squads', squadRoutes);
+
+// Channel routes (GET/POST /channels/:id/messages)
+router.use('/channels', channelRoutes);
+
+// Discover & Search routes (GET /discover, GET /search)
+router.use('/discover', discoverRoutes);
+router.use('/search', discoverRoutes);
 
 export default router;
