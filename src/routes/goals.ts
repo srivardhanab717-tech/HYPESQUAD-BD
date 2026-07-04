@@ -4,6 +4,8 @@ import { authMiddleware } from '../middleware/auth';
 import { AuthenticatedRequest } from '../types';
 import { createGoal, getGoalsDashboard, getGoalDetail, CreateGoalInput } from '../services/goals';
 import { generateMilestonePlan } from '../services/ai/milestonePlan';
+import { performCheckin } from '../services/checkins';
+import { createAutoPost } from '../services/posts';
 import { getSupabaseClient } from '../lib/supabase';
 import { ValidationError } from '../lib/errors';
 
@@ -122,6 +124,41 @@ router.post(
       const plan = await generateMilestonePlan(goalId, userId);
 
       res.status(201).json({ milestone_plan: plan });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+/**
+ * POST /goals/:id/checkins
+ * Perform a check-in for a goal. Returns 200 for both success and duplicate (with duplicate flag).
+ * Auto-generates a progress post on new check-ins (exempt from moderation).
+ */
+router.post(
+  '/:id/checkins',
+  authMiddleware,
+  async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    try {
+      const userId = req.user!.sub;
+      const goalId = req.params.id;
+
+      if (!goalId) {
+        throw new ValidationError('Goal ID is required');
+      }
+
+      const checkinResult = await performCheckin(goalId, userId);
+
+      // Only generate auto-post for NEW check-ins (not duplicates)
+      let autoPost = null;
+      if (!checkinResult.duplicate && checkinResult.current_streak !== undefined) {
+        autoPost = await createAutoPost(userId, goalId, checkinResult.current_streak);
+      }
+
+      res.status(200).json({
+        ...checkinResult,
+        post: autoPost,
+      });
     } catch (error) {
       next(error);
     }
