@@ -10,6 +10,8 @@ import discoverRoutes from './discover';
 import aiCoachRoutes from './aiCoach';
 import coachRoutes from './coaches';
 import subscriptionRoutes from './subscriptions';
+import reelRoutes from './reels';
+import milestoneCardRoutes from './milestoneCards';
 
 const router = Router();
 
@@ -58,5 +60,11 @@ router.use('/coaches', coachRoutes);
 
 // Subscription routes (POST /subscriptions/upgrade)
 router.use('/subscriptions', subscriptionRoutes);
+
+// Reel routes (POST /reels, GET /reels/feed)
+router.use('/reels', reelRoutes);
+
+// Milestone Card routes (POST /milestone-cards)
+router.use('/milestone-cards', milestoneCardRoutes);
 
 export default router;
