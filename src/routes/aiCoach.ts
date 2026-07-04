@@ -1,19 +1,11 @@
 import { Router, Response, NextFunction } from 'express';
-import rateLimit from 'express-rate-limit';
 import { authMiddleware } from '../middleware/auth';
+import { aiRateLimiter } from '../middleware/aiRateLimiter';
 import { AuthenticatedRequest } from '../types';
 import { sendCoachMessage, getConversationHistoryForUser } from '../services/ai/coach';
 import { ValidationError } from '../lib/errors';
 
 const router = Router();
-
-// Rate limiter for AI Coach messages (10/hour per user)
-const coachMessageLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 hour
-  max: 10, // 10 requests per hour per user
-  keyGenerator: (req) => (req as AuthenticatedRequest).user?.sub || 'unknown',
-  message: { error: 'Too many requests', code: 'RATE_LIMIT_EXCEEDED', statusCode: 429 },
-});
 
 /**
  * POST /ai-coach/messages
@@ -22,7 +14,7 @@ const coachMessageLimiter = rateLimit({
 router.post(
   '/messages',
   authMiddleware,
-  coachMessageLimiter,
+  aiRateLimiter,
   async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       const userId = req.user!.sub;

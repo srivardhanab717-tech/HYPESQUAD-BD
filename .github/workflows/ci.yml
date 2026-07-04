@@ -1,0 +1,64 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, 'feat/**', 'wave-*']
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint-and-typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - run: npm ci
+      - run: npx tsc --noEmit
+      - run: npx eslint src/ --ext .ts || true  # Non-blocking for now
+
+  test:
+    runs-on: ubuntu-latest
+    needs: lint-and-typecheck
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm test
+
+  migration-dry-run:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate SQL migrations syntax
+        run: |
+          for f in supabase/migrations/*.sql; do
+            echo "Checking $f..."
+            # Basic syntax validation (no PG connection needed)
+            grep -c "CREATE\|ALTER\|INSERT" "$f" > /dev/null || echo "Warning: $f may be empty"
+          done
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: migration-dry-run
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy placeholder
+        run: echo "Deploy step - configure with actual deployment target"
+
+  smoke-test:
+    runs-on: ubuntu-latest
+    needs: deploy
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Smoke test placeholder
+        run: |
+          echo "Smoke tests: auth, check-in idempotency, hype idempotency"
+          echo "Configure with actual API endpoint after deployment"

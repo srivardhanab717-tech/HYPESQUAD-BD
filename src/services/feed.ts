@@ -1,6 +1,7 @@
 import { getSupabaseClient } from '../lib/supabase';
 import { NotFoundError, ForbiddenError, ValidationError } from '../lib/errors';
 import { createNotification } from './notifications';
+import { moderateContent } from './moderation';
 
 // ============================================================
 // Types
@@ -597,7 +598,7 @@ export async function createPost(
     }
   }
 
-  // Create post
+  // Create post (insert first, then moderate async — v1 flags but does not block)
   const { data: post, error } = await supabase
     .from('posts')
     .insert({
@@ -615,5 +616,13 @@ export async function createPost(
     throw new ForbiddenError('Failed to create post');
   }
 
-  return post as CreatedPost;
+  const createdPost = post as CreatedPost;
+
+  // Moderate body text (async — creates flag if needed, does NOT block insertion)
+  // Note: auto-posts from check-ins use createAutoPost() which is EXEMPT from moderation
+  moderateContent('post', createdPost.id, body.trim()).catch((err) => {
+    console.error('Post moderation failed:', err);
+  });
+
+  return createdPost;
 }
