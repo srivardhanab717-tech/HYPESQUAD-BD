@@ -29,6 +29,7 @@ export const config = {
   sms: {
     apiKey: requireEnv('SMS_API_KEY'),
     senderId: process.env.SMS_SENDER_ID || 'HYPEsquad',
+    templateId: requireEnv('SMS_TEMPLATE_ID'),
   },
 
   oauth: {
