@@ -113,6 +113,13 @@ export async function verifyOtp(phone: string, code: string): Promise<AuthRespon
     throw new ValidationError('Invalid OTP code format');
   }
 
+  // ─── TEST BYPASS: accept "123456" when BYPASS_OTP=true ─────────────────
+  if (config.bypassOtp && code === '123456') {
+    console.warn(`[OTP BYPASS] Accepting test code for phone: ${phone}`);
+    return await issueTokenForPhone(phone);
+  }
+  // ─── END BYPASS ────────────────────────────────────────────────────────
+
   const supabase = getSupabaseClient();
 
   // Find the most recent unverified OTP session for this phone
@@ -146,6 +153,16 @@ export async function verifyOtp(phone: string, code: string): Promise<AuthRespon
     .from('otp_sessions')
     .update({ verified: true })
     .eq('id', session.id);
+
+  return await issueTokenForPhone(phone);
+}
+
+/**
+ * Find or create a user by phone number and issue a JWT session token.
+ * Shared by both the normal OTP verify path and the test bypass path.
+ */
+async function issueTokenForPhone(phone: string): Promise<AuthResponse> {
+  const supabase = getSupabaseClient();
 
   // Find or create user by phone
   let { data: existingUser } = await supabase

@@ -13,6 +13,7 @@ function requireEnv(key: string): string {
 export const config = {
   port: parseInt(process.env.PORT || '3000', 10),
   nodeEnv: process.env.NODE_ENV || 'development',
+  bypassOtp: process.env.BYPASS_OTP === 'true',
 
   supabase: {
     url: requireEnv('SUPABASE_URL'),
